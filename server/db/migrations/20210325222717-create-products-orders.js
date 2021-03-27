@@ -10,10 +10,12 @@ module.exports = {
       order_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
+        references: { model: 'Products', key: 'id' },
       },
       product_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
+        references: { model: 'Orders', key: 'id' },
       },
       qtd: {
         type: Sequelize.INTEGER,
