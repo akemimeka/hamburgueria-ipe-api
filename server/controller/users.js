@@ -50,7 +50,7 @@ class UsersController {
         where: { id: req.params.userId },
         attributes: { exclude: ['password'] },
       });
-      return res.status(202).json(updatedUser);
+      return res.status(200).json(updatedUser);
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }
