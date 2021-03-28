@@ -20,6 +20,30 @@ class ProductsController {
       return res.status(400).json({ error: error.message });
     }
   }
+
+  static async updateProduct(req, res) {
+    try {
+      await Products.update(
+        {
+          name: req.body.name,
+          price: req.body.price,
+          flavor: req.body.flavor,
+          complement: req.body.complement,
+          image: req.body.image,
+          type: req.body.type,
+          sub_type: req.body.sub_type,
+        },
+        { where: { id: req.params.productId } },
+      );
+
+      const updatedProduct = await Products.findAll({
+        where: { id: req.params.productId },
+      });
+      return res.status(200).json(updatedProduct);
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
 }
 
 module.exports = ProductsController;
