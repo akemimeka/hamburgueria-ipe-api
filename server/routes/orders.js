@@ -1,15 +1,13 @@
 const express = require('express');
+const controller = require('../controller/orders');
 
 const router = express.Router();
+const { getAllOrders, createNewOrder } = controller;
 
 router
   .route('/')
-  .get((req, res) => {
-    res.send('Pega dados de todos os pedidos.');
-  })
-  .post((req, res) => {
-    res.send('Cria um novo pedido.');
-  });
+  .get(getAllOrders)
+  .post(createNewOrder);
 
 router
   .route('/:orderId')
