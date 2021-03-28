@@ -12,6 +12,18 @@ class ProductsController {
     }
   }
 
+  static async getProduct(req, res) {
+    try {
+      const product = await Products.findAll({
+        where: { id: req.params.productId },
+        attributes: { exclude: ['password'] },
+      });
+      return res.status(200).json(product);
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
   static async createNewProduct(req, res) {
     try {
       const newProduct = await Products.create(req.body);

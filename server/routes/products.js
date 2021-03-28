@@ -2,7 +2,7 @@ const express = require('express');
 const controller = require('../controller/products');
 
 const router = express.Router();
-const { getAllProducts, createNewProduct, updateProduct } = controller;
+const { getAllProducts, createNewProduct, getProduct, updateProduct } = controller;
 
 router
   .route('/')
@@ -11,9 +11,7 @@ router
 
 router
   .route('/:productId')
-  .get((req, res) => {
-    res.send(`Pega dados do item ${req.params.productId}.`);
-  })
+  .get(getProduct)
   .put(updateProduct)
   .delete((req, res) => {
     res.send(`Deleta item ${req.params.productId}.`);
