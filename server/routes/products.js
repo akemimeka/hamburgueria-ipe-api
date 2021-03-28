@@ -2,7 +2,7 @@ const express = require('express');
 const controller = require('../controller/products');
 
 const router = express.Router();
-const { getAllProducts, createNewProduct, getProduct, updateProduct } = controller;
+const { getAllProducts, createNewProduct, getProduct, updateProduct, deleteProduct } = controller;
 
 router
   .route('/')
@@ -13,8 +13,6 @@ router
   .route('/:productId')
   .get(getProduct)
   .put(updateProduct)
-  .delete((req, res) => {
-    res.send(`Deleta item ${req.params.productId}.`);
-  });
+  .delete(deleteProduct);
 
 module.exports = router;
