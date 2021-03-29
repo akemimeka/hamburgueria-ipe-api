@@ -44,6 +44,17 @@ class UsersController {
   }
 
   static async createNewUser(req, res) {
+    const takenEmail = await Users.findAll({
+      where: { email: req.body.email },
+    });
+
+    if (takenEmail) {
+      return res.status(403).json({
+        code: 403,
+        message: 'The provided e-mail is already taken.',
+      });
+    }
+
     try {
       const newUser = await Users.create(req.body);
       return res.status(201).json(newUser);
