@@ -8,6 +8,14 @@ class UsersController {
       const users = await Users.findAll({
         attributes: { exclude: ['password'] },
       });
+
+      if (users.length === 0) {
+        return res.status(404).json({
+          code: 404,
+          message: 'There are no registered users.',
+        });
+      }
+
       return res.status(200).json(users);
     } catch (error) {
       return res.status(400).json({ error: error.message });
@@ -15,6 +23,15 @@ class UsersController {
   }
 
   static async getUser(req, res) {
+    const findUser = await Users.findByPk(req.params.userId);
+
+    if (!findUser) {
+      return res.status(404).json({
+        code: 404,
+        message: "The user wasn't found.",
+      });
+    }
+
     try {
       const user = await Users.findAll({
         where: { id: req.params.userId },
@@ -31,11 +48,23 @@ class UsersController {
       const newUser = await Users.create(req.body);
       return res.status(201).json(newUser);
     } catch (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({
+        code: 400,
+        message: error.message,
+      });
     }
   }
 
   static async updateUser(req, res) {
+    const findUser = await Users.findByPk(req.params.userId);
+
+    if (!findUser) {
+      return res.status(404).json({
+        code: 404,
+        message: "The user wasn't found.",
+      });
+    }
+
     try {
       await Users.update(
         {
@@ -52,11 +81,23 @@ class UsersController {
       });
       return res.status(200).json(updatedUser);
     } catch (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({
+        code: 400,
+        error: error.message,
+      });
     }
   }
 
   static async deleteUser(req, res) {
+    const findUser = await Users.findByPk(req.params.userId);
+
+    if (!findUser) {
+      return res.status(404).json({
+        code: 404,
+        message: "The user wasn't found.",
+      });
+    }
+
     try {
       await Users.destroy({
         where: { id: req.params.userId },

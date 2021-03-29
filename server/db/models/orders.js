@@ -13,8 +13,14 @@ module.exports = (sequelize, DataTypes) => {
     user_id: DataTypes.INTEGER,
     client_name: DataTypes.STRING,
     table: DataTypes.INTEGER,
-    status: DataTypes.STRING,
-    processedAt: DataTypes.DATE,
+    status: {
+      type: DataTypes.STRING,
+      defaultValue: 'pending',
+    },
+    processedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   }, {
     sequelize,
     modelName: 'Orders',
