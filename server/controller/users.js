@@ -51,7 +51,7 @@ class UsersController {
     if (takenEmail) {
       return res.status(403).json({
         code: 403,
-        message: 'The provided e-mail is already taken.',
+        message: 'The provided e-mail is already in use.',
       });
     }
 
