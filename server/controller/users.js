@@ -44,20 +44,22 @@ class UsersController {
   }
 
   static async createNewUser(req, res) {
-    const takenEmail = await Users.findAll({
-      where: { email: req.body.email },
-    });
-
-    if (takenEmail) {
-      return res.status(403).json({
-        code: 403,
-        message: 'The provided e-mail is already in use.',
-      });
-    }
+    const { email, name, password, role, restaurant } = req.body;
 
     try {
-      const newUser = await Users.create(req.body);
-      return res.status(201).json(newUser);
+      const verifyEmail = await Users.findOrCreate({
+        where: { email },
+        defaults: { email, name, password, role, restaurant },
+      });
+
+      if (verifyEmail[1] === false) {
+        return res.status(403).json({
+          code: 403,
+          message: 'The provided e-mail is already registered.',
+        });
+      }
+
+      return res.status(201).json(verifyEmail[0]);
     } catch (error) {
       return res.status(400).json({
         code: 400,
@@ -67,6 +69,7 @@ class UsersController {
   }
 
   static async updateUser(req, res) {
+    const { name, password, role } = req.body;
     const findUser = await Users.findByPk(req.params.userId);
 
     if (!findUser) {
@@ -78,11 +81,7 @@ class UsersController {
 
     try {
       await Users.update(
-        {
-          name: req.body.name,
-          password: req.body.password,
-          role: req.body.role,
-        },
+        { name, password, role },
         { where: { id: req.params.userId } },
       );
 
