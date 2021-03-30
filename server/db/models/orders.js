@@ -9,8 +9,6 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'order_id',
         otherKey: 'product_id',
       });
-
-      Orders.belongsTo(models.Users);
     }
   }
 
@@ -24,7 +22,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     processedAt: {
       type: DataTypes.DATE,
-      allowNull: true,
+      allowNull: false,
+      defaultValue: Date.now(),
     },
   }, {
     sequelize,
