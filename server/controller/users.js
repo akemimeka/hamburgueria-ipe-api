@@ -109,9 +109,9 @@ class UsersController {
   }
 
   static async deleteUser(req, res) {
-    const findUser = await Users.findByPk(req.params.userId);
+    const searchedUser = await Users.findByPk(req.params.userId);
 
-    if (!findUser) {
+    if (searchedUser === null) {
       return res.status(404).json({
         code: 404,
         message: 'User not found.',

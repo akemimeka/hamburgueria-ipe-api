@@ -8,6 +8,13 @@ class OrdersController {
     try {
       const orders = await Orders.findAll();
 
+      if (orders.length === 0) {
+        return res.status(404).json({
+          code: 404,
+          message: 'No orders were found.',
+        });
+      }
+
       const allOrders = orders.map(async (order) => {
         await Orders.findAll({
           where: { id: order.id },
@@ -44,12 +51,12 @@ class OrdersController {
   }
 
   static async getOrder(req, res) {
-    const findOrder = await Orders.findByPk(req.params.orderId);
+    const searchedOrder = await Orders.findByPk(req.params.orderId);
 
-    if (!findOrder) {
+    if (searchedOrder === null) {
       return res.status(404).json({
         code: 404,
-        message: "The order wasn't found.",
+        message: 'Order not found.',
       });
     }
 
@@ -91,14 +98,12 @@ class OrdersController {
 
     try {
       const productsList = products.map(async (item) => {
-        let searchedProduct = await Products.findByPk(item.id);
-        searchedProduct = searchedProduct.toJSON();
-        // console.log('11111111111', searchedProduct);
+        const searchedProduct = await Products.findByPk(item.id);
 
         if (searchedProduct === null) {
           return res.status(404).json({
             code: 404,
-            message: `Item with id ${item.id} not found.`,
+            message: `Product with id ${item.id} was not found.`,
           });
         }
 
@@ -106,14 +111,14 @@ class OrdersController {
         const { qtd } = item;
 
         const newItem = { id, name, flavor, complement, image, type, sub_type, price, qtd };
-        // console.log('2222222222', newItem);
+        // console.log('//////////////', newItem);
         return newItem;
       });
 
       let newOrder = await Orders.create({ user_id, client_name, table });
       newOrder = newOrder.toJSON();
 
-      productsList.forEach(async (item) => {
+      products.map(async (item) => {
         await ProductsOrders.create({
           order_id: newOrder.id,
           product_id: item.id,
@@ -127,6 +132,24 @@ class OrdersController {
       };
 
       return res.status(201).json(completeNewOrder);
+    } catch (error) {
+      return res.status(400).json(error);
+    }
+  }
+
+  static async deleteOrder(req, res) {
+    const searchedOrder = await Orders.findByPk(req.params.orderId);
+
+    if (searchedOrder === null) {
+      return res.status(404).json({
+        code: 404,
+        message: 'Order not found.',
+      });
+    }
+
+    try {
+      await Orders.destroy({ where: { id: req.params.orderId } });
+      return res.status(200).json(`Order with id ${req.params.orderId} was deleted successfully.`);
     } catch (error) {
       return res.status(400).json(error);
     }
