@@ -2,7 +2,7 @@ const express = require('express');
 const controller = require('../controller/orders');
 
 const router = express.Router();
-const { getAllOrders, getOrder, createNewOrder, deleteOrder } = controller;
+const { getAllOrders, getOrder, createNewOrder, updateOrder, deleteOrder } = controller;
 
 router
   .route('/')
@@ -12,7 +12,7 @@ router
 router
   .route('/:orderId')
   .get(getOrder)
-  // .put(updateOrder)
+  .put(updateOrder)
   .delete(deleteOrder);
 
 module.exports = router;

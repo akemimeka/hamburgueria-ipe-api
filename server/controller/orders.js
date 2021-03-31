@@ -6,42 +6,48 @@ const { Orders, Products, ProductsOrders } = database;
 class OrdersController {
   static async getAllOrders(_, res) {
     try {
-      const orders = await Orders.findAll();
+      let allOrders = await Orders.findAll({
+        include: {
+          model: Products,
+          as: 'products',
+          attributes: ['id', 'name', 'flavor', 'complement', 'image', 'type', 'sub_type', 'price'],
+          through: {
+            model: ProductsOrders,
+            as: 'qtd',
+            attributes: ['qtd'],
+          },
+        },
+      });
 
-      if (orders.length === 0) {
+      if (allOrders.length === 0) {
         return res.status(404).json({
           code: 404,
           message: 'No orders were found.',
         });
       }
 
-      const allOrders = orders.map(async (order) => {
-        await Orders.findAll({
-          where: { id: order.id },
-        });
+      allOrders = JSON.parse(JSON.stringify(allOrders));
 
-        const productsList = await ProductsOrders.findAll({
-          where: { order_id: order.id },
-          attributes: [['product_id', 'id'], 'qtd'],
-        });
+      // console.log('/////////////////', allOrders);
 
-        const { id, user_id, client_name, table,
-          status, createdAt, processedAt, updatedAt } = order;
+      const returnedOrders = allOrders.map(async (order) => {
+        const productsList = order.products.map((product) => ({
+          ...product,
+          qtd: product.qtd.qtd,
+        }));
+
+        // console.log('1111111111111', order);
+        // console.log('2222222222222', productsList);
 
         return {
-          id,
-          user_id,
-          client_name,
-          table,
-          status,
-          createdAt,
-          processedAt,
-          updatedAt,
+          ...order,
           products: productsList,
         };
       });
 
-      return res.status(200).json(allOrders);
+      console.log('////////////////', returnedOrders);
+
+      return res.status(200).json(returnedOrders);
     } catch (error) {
       return res.status(400).json({
         code: 400,
@@ -137,6 +143,30 @@ class OrdersController {
     }
   }
 
+  static async updateOrder(req, res) {
+    const { user_id, client_name, table, status, processedAt } = req.body;
+    const searchedOrder = await Orders.findByPk(req.params.orderId);
+
+    if (searchedOrder === null) {
+      return res.status(404).json({
+        code: 404,
+        message: 'Order not found.',
+      });
+    }
+
+    try {
+      await Orders.update(
+        { user_id, client_name, table, status, processedAt },
+        { where: { id: req.params.orderId } },
+      );
+
+      const updatedOrder = await Orders.findByPk(req.params.orderId);
+      return res.status(200).json(updatedOrder);
+    } catch (error) {
+      return res.status(400).json(error);
+    }
+  }
+
   static async deleteOrder(req, res) {
     const searchedOrder = await Orders.findByPk(req.params.orderId);
 
@@ -148,6 +178,7 @@ class OrdersController {
     }
 
     try {
+      await ProductsOrders.destroy({ where: { order_id: req.params.orderId } });
       await Orders.destroy({ where: { id: req.params.orderId } });
       return res.status(200).json(`Order with id ${req.params.orderId} was deleted successfully.`);
     } catch (error) {

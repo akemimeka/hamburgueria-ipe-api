@@ -78,17 +78,16 @@ class UsersController {
 
   static async updateUser(req, res) {
     const { name, password, role } = req.body;
+    const findUser = await Users.findByPk(req.params.userId);
+
+    if (!findUser) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found.',
+      });
+    }
 
     try {
-      const findUser = await Users.findByPk(req.params.userId);
-
-      if (!findUser) {
-        return res.status(404).json({
-          code: 404,
-          message: 'User not found.',
-        });
-      }
-
       await Users.update(
         { name, password, role },
         { where: { id: req.params.userId } },
