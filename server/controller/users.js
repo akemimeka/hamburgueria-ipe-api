@@ -6,7 +6,7 @@ class UsersController {
   static async getAllUsers(_, res) {
     try {
       const users = await Users.findAll({
-        attributes: { exclude: ['password'] },
+        attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
       });
 
       if (users.length === 0) {
@@ -28,14 +28,14 @@ class UsersController {
     if (!findUser) {
       return res.status(404).json({
         code: 404,
-        message: "The user wasn't found.",
+        message: 'User not found.',
       });
     }
 
     try {
-      const user = await Users.findAll({
+      const user = await Users.findOne({
         where: { id: req.params.userId },
-        attributes: { exclude: ['password'] },
+        attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
       });
       return res.status(200).json(user);
     } catch (error) {
@@ -47,19 +47,27 @@ class UsersController {
     const { email, name, password, role, restaurant } = req.body;
 
     try {
-      const verifyEmail = await Users.findOrCreate({
+      const findOrCreateUser = await Users.findOrCreate({
         where: { email },
-        defaults: { email, name, password, role, restaurant },
+        defaults: { name, email, password, role, restaurant },
       });
 
-      if (verifyEmail[1] === false) {
+      const newUser = findOrCreateUser[0];
+      const newEmail = findOrCreateUser[1];
+
+      if (!newEmail) {
         return res.status(403).json({
           code: 403,
           message: 'The provided e-mail is already registered.',
         });
       }
 
-      return res.status(201).json(verifyEmail[0]);
+      const returnedUser = await Users.findOne({
+        where: { id: newUser.id },
+        attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
+      });
+
+      return res.status(201).json(returnedUser);
     } catch (error) {
       return res.status(400).json({
         code: 400,
@@ -70,25 +78,27 @@ class UsersController {
 
   static async updateUser(req, res) {
     const { name, password, role } = req.body;
-    const findUser = await Users.findByPk(req.params.userId);
-
-    if (!findUser) {
-      return res.status(404).json({
-        code: 404,
-        message: "The user wasn't found.",
-      });
-    }
 
     try {
+      const findUser = await Users.findByPk(req.params.userId);
+
+      if (!findUser) {
+        return res.status(404).json({
+          code: 404,
+          message: 'User not found.',
+        });
+      }
+
       await Users.update(
         { name, password, role },
         { where: { id: req.params.userId } },
       );
 
-      const updatedUser = await Users.findAll({
+      const updatedUser = await Users.findOne({
         where: { id: req.params.userId },
-        attributes: { exclude: ['password'] },
+        attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
       });
+
       return res.status(200).json(updatedUser);
     } catch (error) {
       return res.status(400).json({
@@ -104,17 +114,18 @@ class UsersController {
     if (!findUser) {
       return res.status(404).json({
         code: 404,
-        message: "The user wasn't found.",
+        message: 'User not found.',
       });
     }
 
     try {
-      await Users.destroy({
-        where: { id: req.params.userId },
-      });
-      return res.status(200).json('The user was deleted successfully.');
+      await Users.destroy({ where: { id: req.params.userId } });
+      return res.status(200).json(`User with id ${req.params.userId} was deleted successfully.`);
     } catch (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({
+        code: 400,
+        error: error.message,
+      });
     }
   }
 }

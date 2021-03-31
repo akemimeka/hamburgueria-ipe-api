@@ -1,5 +1,3 @@
-/* eslint-disable arrow-body-style */
-/* eslint-disable consistent-return */
 /* eslint-disable camelcase */
 const database = require('../db/models');
 
@@ -56,35 +54,30 @@ class OrdersController {
     }
 
     try {
-      const order = await Orders.findAll({
+      let order = await Orders.findOne({
         where: { id: req.params.orderId },
+        include: {
+          model: Products,
+          as: 'products',
+          attributes: ['id', 'name', 'flavor', 'complement', 'image', 'type', 'sub_type', 'price'],
+          through: {
+            model: ProductsOrders,
+            as: 'qtd',
+            attributes: ['qtd'],
+          },
+        },
       });
 
-      const productsList = await ProductsOrders.findAll({
-        where: { order_id: req.params.orderId },
-        attributes: [['product_id', 'id'], 'qtd'],
-      });
+      order = order.toJSON();
 
-      // const productsInfo = productsList.map(async (product) => {
-      //   await Products.findAll({
-      //     where: { id: product.id },
-      //     attributes: ['name'],
-      //   });
-      // });
-
-      const { id, user_id, client_name, table,
-        status, createdAt, processedAt, updatedAt } = order[0];
+      const orderedItems = order.products.map((product) => ({
+        ...product,
+        qtd: product.qtd.qtd,
+      }));
 
       const completeOrder = {
-        id,
-        user_id,
-        client_name,
-        table,
-        status,
-        createdAt,
-        processedAt,
-        updatedAt,
-        products: productsList,
+        ...order,
+        products: orderedItems,
       };
 
       return res.status(200).json(completeOrder);
@@ -97,29 +90,43 @@ class OrdersController {
     const { user_id, client_name, table, products } = req.body;
 
     try {
-      const newOrder = await Orders.create({
-        user_id, client_name, table,
+      const productsList = products.map(async (item) => {
+        let searchedProduct = await Products.findByPk(item.id);
+        searchedProduct = searchedProduct.toJSON();
+        // console.log('11111111111', searchedProduct);
+
+        if (searchedProduct === null) {
+          return res.status(404).json({
+            code: 404,
+            message: `Item with id ${item.id} not found.`,
+          });
+        }
+
+        const { id, name, flavor, complement, image, type, sub_type, price } = searchedProduct;
+        const { qtd } = item;
+
+        const newItem = { id, name, flavor, complement, image, type, sub_type, price, qtd };
+        // console.log('2222222222', newItem);
+        return newItem;
       });
 
-      products.map(async (item) => {
-        // const product = await Products.findByPk(item.id);
+      let newOrder = await Orders.create({ user_id, client_name, table });
+      newOrder = newOrder.toJSON();
 
-        // if (!product) {
-        //   return res.status(400).json({
-        //     code: 400,
-        //     message: 'At least one of the items you ordered does not exist.',
-        //   });
-        // }
-
-        const newProductOrder = {
+      productsList.forEach(async (item) => {
+        await ProductsOrders.create({
           order_id: newOrder.id,
           product_id: item.id,
           qtd: item.qtd,
-        };
-
-        await ProductsOrders.create(newProductOrder);
+        });
       });
-      return res.status(201).json(newOrder);
+
+      const completeNewOrder = {
+        ...newOrder,
+        products: productsList,
+      };
+
+      return res.status(201).json(completeNewOrder);
     } catch (error) {
       return res.status(400).json(error);
     }
