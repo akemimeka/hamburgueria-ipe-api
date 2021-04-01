@@ -5,20 +5,24 @@ const { Users } = database;
 class UsersController {
   static async getAllUsers(_, res) {
     try {
-      const users = await Users.findAll({
+      const allUsers = await Users.findAll({
+        order: [['id', 'ASC']],
         attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
       });
 
-      if (users.length === 0) {
-        return res.status(404).json({
-          code: 404,
+      if (allUsers.length === 0) {
+        return res.status(400).json({
+          code: 400,
           message: 'There are no registered users.',
         });
       }
 
-      return res.status(200).json(users);
+      return res.status(200).json(allUsers);
     } catch (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({
+        code: 400,
+        error: error.message,
+      });
     }
   }
 
@@ -26,8 +30,8 @@ class UsersController {
     const findUser = await Users.findByPk(req.params.userId);
 
     if (!findUser) {
-      return res.status(404).json({
-        code: 404,
+      return res.status(400).json({
+        code: 400,
         message: 'User not found.',
       });
     }
@@ -39,7 +43,10 @@ class UsersController {
       });
       return res.status(200).json(user);
     } catch (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({
+        code: 400,
+        error: error.message,
+      });
     }
   }
 
@@ -81,8 +88,8 @@ class UsersController {
     const findUser = await Users.findByPk(req.params.userId);
 
     if (!findUser) {
-      return res.status(404).json({
-        code: 404,
+      return res.status(400).json({
+        code: 400,
         message: 'User not found.',
       });
     }
@@ -110,9 +117,9 @@ class UsersController {
   static async deleteUser(req, res) {
     const searchedUser = await Users.findByPk(req.params.userId);
 
-    if (searchedUser === null) {
-      return res.status(404).json({
-        code: 404,
+    if (!searchedUser) {
+      return res.status(400).json({
+        code: 400,
         message: 'User not found.',
       });
     }
