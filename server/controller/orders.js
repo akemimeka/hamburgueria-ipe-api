@@ -28,24 +28,17 @@ class OrdersController {
 
       allOrders = JSON.parse(JSON.stringify(allOrders));
 
-      // console.log('/////////////////', allOrders);
-
-      const returnedOrders = allOrders.map(async (order) => {
+      const returnedOrders = allOrders.map((order) => {
         const productsList = order.products.map((product) => ({
           ...product,
           qtd: product.qtd.qtd,
         }));
-
-        // console.log('1111111111111', order);
-        // console.log('2222222222222', productsList);
 
         return {
           ...order,
           products: productsList,
         };
       });
-
-      console.log('////////////////', returnedOrders);
 
       return res.status(200).json(returnedOrders);
     } catch (error) {
@@ -111,43 +104,52 @@ class OrdersController {
     }
 
     try {
-      const productsList = products.map(async (item) => {
+      let productsList = products.map(async (item) => {
         const searchedProduct = await Products.findByPk(item.id);
 
         if (searchedProduct === null) {
-          return res.status(404).json({
-            code: 404,
-            message: `Product with id ${item.id} was not found.`,
-          });
+          throw new Error(`Product with id ${item.id} was not found.`);
         }
 
-        const { id, name, flavor, complement, image, type, sub_type, price } = searchedProduct;
         const { qtd } = item;
-
+        const { id, name, flavor, complement, image, type, sub_type, price } = searchedProduct;
         const newItem = { id, name, flavor, complement, image, type, sub_type, price, qtd };
-        // console.log('//////////////', newItem);
+
         return newItem;
       });
 
+      productsList = await Promise.all(productsList);
+
       let newOrder = await Orders.create({ user_id, client_name, table });
       newOrder = newOrder.toJSON();
+      const { id, status, createdAt, updatedAt, processedAt } = newOrder;
 
-      products.map(async (item) => {
-        await ProductsOrders.create({
-          order_id: newOrder.id,
-          product_id: item.id,
-          qtd: item.qtd,
-        });
-      });
+      const orderedItems = products.map((item) => ({
+        order_id: newOrder.id,
+        product_id: item.id,
+        qtd: item.qtd,
+      }));
+
+      await ProductsOrders.bulkCreate(orderedItems);
 
       const completeNewOrder = {
-        ...newOrder,
+        id,
+        user_id,
+        client_name,
+        table,
+        status,
+        createdAt,
+        updatedAt,
+        processedAt,
         products: productsList,
       };
 
       return res.status(201).json(completeNewOrder);
     } catch (error) {
-      return res.status(400).json(error);
+      return res.status(400).json({
+        code: 400,
+        message: error.message,
+      });
     }
   }
 
