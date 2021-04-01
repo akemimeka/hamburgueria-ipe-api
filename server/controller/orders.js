@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 const database = require('../db/models');
 
-const { Orders, Products, ProductsOrders } = database;
+const { Users, Orders, Products, ProductsOrders } = database;
 
 class OrdersController {
   static async getAllOrders(_, res) {
@@ -101,6 +101,14 @@ class OrdersController {
 
   static async createNewOrder(req, res) {
     const { user_id, client_name, table, products } = req.body;
+    const searchedUser = await Users.findByPk(user_id);
+
+    if (!searchedUser) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found.',
+      });
+    }
 
     try {
       const productsList = products.map(async (item) => {
@@ -146,11 +154,19 @@ class OrdersController {
   static async updateOrder(req, res) {
     const { user_id, client_name, table, status, processedAt } = req.body;
     const searchedOrder = await Orders.findByPk(req.params.orderId);
+    const searchedUser = await Users.findByPk(user_id);
 
     if (searchedOrder === null) {
       return res.status(404).json({
         code: 404,
         message: 'Order not found.',
+      });
+    }
+
+    if (!searchedUser) {
+      return res.status(404).json({
+        code: 404,
+        message: 'User not found.',
       });
     }
 
