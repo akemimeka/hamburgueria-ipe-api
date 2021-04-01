@@ -7,6 +7,7 @@ class OrdersController {
   static async getAllOrders(_, res) {
     try {
       let allOrders = await Orders.findAll({
+        order: [['id', 'ASC']],
         include: {
           model: Products,
           as: 'products',
@@ -52,9 +53,9 @@ class OrdersController {
   static async getOrder(req, res) {
     const searchedOrder = await Orders.findByPk(req.params.orderId);
 
-    if (searchedOrder === null) {
-      return res.status(404).json({
-        code: 404,
+    if (!searchedOrder) {
+      return res.status(400).json({
+        code: 400,
         message: 'Order not found.',
       });
     }
@@ -88,7 +89,10 @@ class OrdersController {
 
       return res.status(200).json(completeOrder);
     } catch (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({
+        code: 400,
+        error: error.message,
+      });
     }
   }
 
@@ -97,8 +101,8 @@ class OrdersController {
     const searchedUser = await Users.findByPk(user_id);
 
     if (!searchedUser) {
-      return res.status(404).json({
-        code: 404,
+      return res.status(400).json({
+        code: 400,
         message: 'User not found.',
       });
     }
@@ -107,7 +111,7 @@ class OrdersController {
       let productsList = products.map(async (item) => {
         const searchedProduct = await Products.findByPk(item.id);
 
-        if (searchedProduct === null) {
+        if (!searchedProduct) {
           throw new Error(`Product with id ${item.id} was not found.`);
         }
 
@@ -158,16 +162,16 @@ class OrdersController {
     const searchedOrder = await Orders.findByPk(req.params.orderId);
     const searchedUser = await Users.findByPk(user_id);
 
-    if (searchedOrder === null) {
-      return res.status(404).json({
-        code: 404,
+    if (!searchedOrder) {
+      return res.status(400).json({
+        code: 400,
         message: 'Order not found.',
       });
     }
 
     if (!searchedUser) {
-      return res.status(404).json({
-        code: 404,
+      return res.status(400).json({
+        code: 400,
         message: 'User not found.',
       });
     }
@@ -181,16 +185,19 @@ class OrdersController {
       const updatedOrder = await Orders.findByPk(req.params.orderId);
       return res.status(200).json(updatedOrder);
     } catch (error) {
-      return res.status(400).json(error);
+      return res.status(400).json({
+        code: 400,
+        error: error.message,
+      });
     }
   }
 
   static async deleteOrder(req, res) {
     const searchedOrder = await Orders.findByPk(req.params.orderId);
 
-    if (searchedOrder === null) {
-      return res.status(404).json({
-        code: 404,
+    if (!searchedOrder) {
+      return res.status(400).json({
+        code: 400,
         message: 'Order not found.',
       });
     }
@@ -200,7 +207,10 @@ class OrdersController {
       await Orders.destroy({ where: { id: req.params.orderId } });
       return res.status(200).json(`Order with id ${req.params.orderId} was deleted successfully.`);
     } catch (error) {
-      return res.status(400).json(error);
+      return res.status(400).json({
+        code: 400,
+        error: error.message,
+      });
     }
   }
 }
